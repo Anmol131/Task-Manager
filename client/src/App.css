@@ -1,0 +1,43 @@
+#root {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+  min-height: 100vh;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Tablet */
+@media (min-width: 640px) {
+  #root {
+    padding: 1.5rem 1.5rem;
+  }
+}
+
+/* Desktop */
+@media (min-width: 768px) {
+  #root {
+    padding: 2rem 2.5rem;
+  }
+}
+
+/* Large Desktop */
+@media (min-width: 1024px) {
+  #root {
+    padding: 2rem 3rem;
+  }
+}
+
+/* Ensure images are responsive */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Better touch targets for mobile */
+@media (max-width: 768px) {
+  button, a, input, select, textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
