@@ -106,14 +106,14 @@ export default function Crud() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                 });
-                addToast('Task updated successfully', 'success');
+                addToast('Task updated', 'success');
             } else {
                 await fetch(`${API_URL}/tasks`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload),
                 });
-                addToast('Task added successfully', 'success');
+                addToast('Task added', 'success');
             }
             setEditingId(null);
             setFormData({ title: '', description: '', status: 'todo' });
@@ -147,7 +147,7 @@ export default function Crud() {
         if (!confirmId) return;
         try {
             await fetch(`${API_URL}/tasks/${confirmId}`, { method: 'DELETE' });
-            addToast('Task deleted successfully', 'success');
+            addToast('Task deleted', 'success');
             fetchItems();
         } catch (err) {
             console.error(err);

@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCw, Plus, Search, X, CheckCircle2, Clock, Circle, TrendingUp } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { RefreshCw, Plus, Search, X, CheckCircle2, Clock, Circle, TrendingUp, Trash2 } from 'lucide-react';
 
 type Task = {
     id: number;
@@ -22,6 +23,8 @@ export default function Home() {
     const [query, setQuery] = useState('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [confirmId, setConfirmId] = useState<number | null>(null);
+    const [confirmTitle, setConfirmTitle] = useState('');
     const { addToast } = useToast();
 
     const updateStatus = async (task: Task, status: string) => {
@@ -33,11 +36,33 @@ export default function Home() {
                 body: JSON.stringify(payload) 
             });
             if (!res.ok) throw new Error('Failed');
-            addToast('Status updated', 'success');
+            const statusText = status === 'completed' ? 'Completed' : status === 'in-progress' ? 'In Progress' : 'To Do';
+            addToast(`Status changed to ${statusText}`, 'success');
             fetchTasks();
         } catch (err) {
             console.error(err);
             addToast('Failed to update status', 'error');
+        }
+    };
+
+    const handleDelete = (id: number, title?: string) => {
+        setConfirmId(id);
+        setConfirmTitle(title || 'this task');
+    };
+
+    const handleDeleteConfirmed = async () => {
+        if (!confirmId) return;
+        try {
+            const res = await fetch(`${API_URL}/tasks/${confirmId}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Failed to delete task');
+            addToast('Task deleted', 'success');
+            fetchTasks();
+        } catch (err) {
+            console.error(err);
+            addToast('Failed to delete task', 'error');
+        } finally {
+            setConfirmId(null);
+            setConfirmTitle('');
         }
     };
 
@@ -255,6 +280,15 @@ export default function Home() {
                                                                 View Details
                                                             </Button>
                                                         </Link>
+                                                        <Button
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            onClick={() => handleDelete(task.id, task.title)}
+                                                            className="gap-2"
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                            <span className="hidden sm:inline">Delete</span>
+                                                        </Button>
                                                     </div>
                                                 </div>
                                             </CardContent>
@@ -298,6 +332,26 @@ export default function Home() {
                     </CardContent>
                 </Card>
             </div>
+
+            <Dialog open={Boolean(confirmId)} onOpenChange={(open) => !open && setConfirmId(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Delete</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete <strong>"{confirmTitle}"</strong>? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setConfirmId(null)}>
+                            Cancel
+                        </Button>
+                        <Button variant="destructive" onClick={handleDeleteConfirmed} className="gap-2">
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
