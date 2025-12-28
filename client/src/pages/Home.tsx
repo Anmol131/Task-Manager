@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { RefreshCw, Plus, Search, X, CheckCircle2, Clock, Circle, TrendingUp, Trash2 } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { RefreshCw, Plus, Search, X, CheckCircle2, Clock, Circle, TrendingUp, Trash2, Edit } from 'lucide-react';
 
 type Task = {
     id: number;
@@ -25,6 +26,8 @@ export default function Home() {
     const [error, setError] = useState<string | null>(null);
     const [confirmId, setConfirmId] = useState<number | null>(null);
     const [confirmTitle, setConfirmTitle] = useState('');
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [editFormData, setEditFormData] = useState({ title: '', description: '', status: 'todo' });
     const { addToast } = useToast();
 
     const updateStatus = async (task: Task, status: string) => {
@@ -63,6 +66,49 @@ export default function Home() {
         } finally {
             setConfirmId(null);
             setConfirmTitle('');
+        }
+    };
+
+    const handleEdit = (task: Task) => {
+        setEditingTask(task);
+        setEditFormData({
+            title: task.title,
+            description: task.description || '',
+            status: task.status || 'todo'
+        });
+    };
+
+    const handleEditCancel = () => {
+        setEditingTask(null);
+        setEditFormData({ title: '', description: '', status: 'todo' });
+    };
+
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingTask || !editFormData.title.trim()) {
+            addToast('Please enter a task title', 'error');
+            return;
+        }
+
+        try {
+            const payload = {
+                title: editFormData.title.trim(),
+                description: editFormData.description.trim(),
+                status: editFormData.status
+            };
+            const res = await fetch(`${API_URL}/tasks/${editingTask.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) throw new Error('Failed to update task');
+            addToast('Task updated', 'success');
+            setEditingTask(null);
+            setEditFormData({ title: '', description: '', status: 'todo' });
+            fetchTasks();
+        } catch (err) {
+            console.error(err);
+            addToast('Failed to update task', 'error');
         }
     };
 
@@ -274,17 +320,26 @@ export default function Home() {
                                                             <option value="completed">Completed</option>
                                                         </Select>
                                                     </div>
-                                                    <div className="flex gap-2 pt-2">
-                                                        <Link to={`/task/${task.id}`} className="flex-1">
+                                                    <div className="flex flex-wrap gap-2 pt-2">
+                                                        <Link to={`/task/${task.id}`} className="flex-1 min-w-[100px]">
                                                             <Button variant="outline" size="sm" className="w-full gap-2">
                                                                 View Details
                                                             </Button>
                                                         </Link>
                                                         <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={() => handleEdit(task)}
+                                                            className="gap-2 flex-1 sm:flex-none min-w-[100px]"
+                                                        >
+                                                            <Edit className="h-4 w-4" />
+                                                            <span className="hidden sm:inline">Edit</span>
+                                                        </Button>
+                                                        <Button
                                                             variant="destructive"
                                                             size="sm"
                                                             onClick={() => handleDelete(task.id, task.title)}
-                                                            className="gap-2"
+                                                            className="gap-2 flex-1 sm:flex-none min-w-[100px]"
                                                         >
                                                             <Trash2 className="h-4 w-4" />
                                                             <span className="hidden sm:inline">Delete</span>
@@ -350,6 +405,66 @@ export default function Home() {
                             Delete
                         </Button>
                     </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={Boolean(editingTask)} onOpenChange={(open) => !open && handleEditCancel()}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Edit className="h-5 w-5" />
+                            Edit Task
+                        </DialogTitle>
+                        <DialogDescription>
+                            Update the task details below
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleEditSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                            <label htmlFor="edit-title" className="text-sm font-medium">Title *</label>
+                            <Input
+                                id="edit-title"
+                                placeholder="Task title"
+                                value={editFormData.title}
+                                onChange={e => setEditFormData({ ...editFormData, title: e.target.value })}
+                                required
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="edit-description" className="text-sm font-medium">Description</label>
+                            <Textarea
+                                id="edit-description"
+                                placeholder="Task description"
+                                rows={4}
+                                value={editFormData.description}
+                                onChange={e => setEditFormData({ ...editFormData, description: e.target.value })}
+                                className="w-full resize-none"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="edit-status" className="text-sm font-medium">Status</label>
+                            <Select
+                                id="edit-status"
+                                value={editFormData.status}
+                                onChange={e => setEditFormData({ ...editFormData, status: e.target.value })}
+                                className="w-full"
+                            >
+                                <option value="todo">To Do</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                            </Select>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={handleEditCancel}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" className="gap-2">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Update Task
+                            </Button>
+                        </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
         </div>
