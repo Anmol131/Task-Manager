@@ -44,19 +44,12 @@ export default function Crud() {
 
     return (
         <div className="animate-fade-in space-y-6 sm:space-y-8 py-4 sm:py-6 max-w-4xl mx-auto px-3 sm:px-4 md:px-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-2">
-                <div>
-                    <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
-                        <ListTodo className="h-5 w-5 sm:h-6 sm:w-6" />
-                        Add New Task
-                    </h2>
-                    <p className="text-sm sm:text-base text-muted-foreground mt-1">Create a new task to get started</p>
-                </div>
-                <Link to="/dashboard">
-                    <Button variant="outline" className="gap-2">
-                        View Dashboard
-                    </Button>
-                </Link>
+            <div className="mb-2">
+                <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+                    <ListTodo className="h-5 w-5 sm:h-6 sm:w-6" />
+                    Add New Task
+                </h2>
+                <p className="text-sm sm:text-base text-muted-foreground mt-1">Create a new task to get started</p>
             </div>
 
             <Card id="add-form">
@@ -76,7 +69,7 @@ export default function Crud() {
                             <Input
                                 id="title"
                                 ref={titleRef}
-                                placeholder="e.g. Prepare quarterly report"
+                                placeholder="Enter task title"
                                 value={formData.title}
                                 onChange={e => setFormData({ ...formData, title: e.target.value })}
                                 required

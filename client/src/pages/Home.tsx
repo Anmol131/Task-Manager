@@ -189,12 +189,6 @@ export default function Home() {
                         <Link to="/crud" className="w-full sm:w-auto">
                             <Button variant="default" className="gap-2 w-full sm:w-auto">
                                 <Plus className="h-4 w-4" />
-                                Manage Tasks
-                            </Button>
-                        </Link>
-                        <Link to="/crud#add" className="w-full sm:w-auto">
-                            <Button variant="secondary" className="gap-2 w-full sm:w-auto">
-                                <Plus className="h-4 w-4" />
                                 Add Task
                             </Button>
                         </Link>
