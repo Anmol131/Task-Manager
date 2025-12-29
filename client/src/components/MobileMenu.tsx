@@ -65,7 +65,7 @@ export function MobileMenu() {
                   Dashboard
                 </NavLink>
                 <NavLink
-                  to="/crud#add"
+                  to="/add-task"
                   onClick={() => setIsOpen(false)}
                   className={({ isActive }) => cn(
                     "text-base font-medium py-3 px-4 rounded-lg transition-colors",
@@ -106,6 +106,9 @@ export function MobileMenu() {
     </>
   );
 }
+
+
+
 
 
 

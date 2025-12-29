@@ -69,7 +69,7 @@ export default function StaticHome() {
                 Open Dashboard
               </Button>
             </Link>
-            <Link to="/crud#add">
+            <Link to="/add-task">
               <Button size="lg" variant="secondary" className="gap-2">
                 <Plus className="h-4 w-4" />
                 Add Task
@@ -182,7 +182,7 @@ export default function StaticHome() {
               </div>
             </div>
             <div className="pt-4">
-              <Link to="/crud">
+              <Link to="/add-task">
                 <Button className="w-full" size="lg">
                   Get Started
                 </Button>

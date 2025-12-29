@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '../components/Toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,9 @@ export default function Crud() {
     const { addToast } = useToast();
     const navigate = useNavigate();
     const titleRef = useRef<HTMLInputElement | null>(null);
+    const location = useLocation();
+    const [isEdit, setIsEdit] = useState(false);
+    const [editId, setEditId] = useState<number | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -23,18 +26,28 @@ export default function Crud() {
         }
 
         try {
-            const payload = { 
-                title: formData.title.trim(), 
-                description: formData.description.trim(), 
-                status: 'todo' // Always set to 'todo' for new tasks
+            const payload = {
+                title: formData.title.trim(),
+                description: formData.description.trim(),
             };
-            await fetch(`${API_URL}/tasks`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            addToast('Task added', 'success');
-            // Redirect to dashboard after successful task creation
+
+            if (isEdit && editId) {
+                await fetch(`${API_URL}/tasks/${editId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                });
+                addToast('Task updated', 'success');
+            } else {
+                // For new tasks set default status
+                await fetch(`${API_URL}/tasks`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ...payload, status: 'todo' }),
+                });
+                addToast('Task added', 'success');
+            }
+            // Redirect to dashboard after successful create/update
             navigate('/dashboard');
         } catch (err) {
             console.error(err);
@@ -42,14 +55,49 @@ export default function Crud() {
         }
     };
 
+    // Watch hash for edit mode: #edit-<id>
+    useEffect(() => {
+        const hash = location.hash || '';
+        if (hash.startsWith('#edit-')) {
+            const idStr = hash.replace('#edit-', '') || '';
+            const id = Number(idStr);
+            if (!isNaN(id) && id > 0) {
+                setIsEdit(true);
+                setEditId(id);
+                // fetch task details
+                (async () => {
+                    try {
+                        const res = await fetch(`${API_URL}/tasks/${id}`);
+                        if (!res.ok) throw new Error('Failed to fetch task');
+                        const data = await res.json();
+                        setFormData({ title: data.title || '', description: data.description || '' });
+                        // focus title
+                        titleRef.current?.focus();
+                    } catch (e) {
+                        console.error(e);
+                        addToast('Failed to load task for editing', 'error');
+                        // fallback to add mode
+                        setIsEdit(false);
+                        setEditId(null);
+                    }
+                })();
+                return;
+            }
+        }
+        // Default to add mode when not editing
+        setIsEdit(false);
+        setEditId(null);
+        setFormData({ title: '', description: '' });
+    }, [location.hash]);
+
     return (
         <div className="animate-fade-in space-y-6 sm:space-y-8 py-4 sm:py-6 max-w-4xl mx-auto px-3 sm:px-4 md:px-6">
             <div className="mb-2">
                 <h2 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
                     <ListTodo className="h-5 w-5 sm:h-6 sm:w-6" />
-                    Add New Task
+                    {isEdit ? 'Edit Task' : 'Add New Task'}
                 </h2>
-                <p className="text-sm sm:text-base text-muted-foreground mt-1">Create a new task to get started</p>
+                <p className="text-sm sm:text-base text-muted-foreground mt-1">{isEdit ? 'Update the task details below' : 'Create a new task to get started'}</p>
             </div>
 
             <Card id="add-form">
@@ -59,7 +107,7 @@ export default function Crud() {
                         Task Details
                     </CardTitle>
                     <CardDescription className="text-xs sm:text-sm">
-                        Fill in the details to create a new task. You can manage and edit tasks from the dashboard.
+                        {isEdit ? 'Make changes and save to update the task.' : 'Fill in the details to create a new task. You can manage and edit tasks from the dashboard.'}
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -93,7 +141,7 @@ export default function Crud() {
                         <div className="flex flex-col sm:flex-row gap-2 pt-2">
                             <Button type="submit" className="flex-1 gap-2">
                                 <Plus className="h-4 w-4" />
-                                Add Task
+                                {isEdit ? 'Update Task' : 'Add Task'}
                             </Button>
                             <Link to="/dashboard" className="flex-1 sm:flex-none">
                                 <Button type="button" variant="outline" className="w-full gap-2">

@@ -186,7 +186,7 @@ export default function Home() {
                         </div>
                     </div>
                     <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                        <Link to="/crud" className="w-full sm:w-auto">
+                        <Link to="/add-task" className="w-full sm:w-auto">
                             <Button variant="default" className="gap-2 w-full sm:w-auto">
                                 <Plus className="h-4 w-4" />
                                 Add Task

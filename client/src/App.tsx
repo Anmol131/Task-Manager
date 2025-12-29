@@ -41,7 +41,7 @@ function App() {
             Dashboard
           </NavLink>
           <NavLink 
-            to="/crud#add" 
+            to="/add-task" 
             className={({ isActive }) => cn(
               "text-sm md:text-base font-medium transition-colors hover:text-primary px-2 py-1 rounded-md",
               isActive ? "text-foreground" : "text-muted-foreground"
@@ -85,7 +85,7 @@ function App() {
       <Routes>
         <Route path="/" element={<StaticHome />} />
         <Route path="/dashboard" element={<Home />} />
-        <Route path="/crud" element={<Crud />} />
+        <Route path="/add-task" element={<Crud />} />
         <Route path="/task/:id" element={<TaskDetails />} />
       </Routes>
     </BrowserRouter>

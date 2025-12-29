@@ -3,7 +3,11 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, CheckCircle2, Clock, Circle, Calendar, FileText, Tag } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select } from '@/components/ui/select';
+import { ArrowLeft, CheckCircle2, Clock, Circle, Calendar, FileText, Tag, Edit } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
 type Task = {
@@ -23,6 +27,8 @@ export default function TaskDetails() {
     const [task, setTask] = useState<Task | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [editingTask, setEditingTask] = useState<Task | null>(null);
+    const [editFormData, setEditFormData] = useState({ title: '', description: '', status: 'todo' });
     const { addToast } = useToast();
 
     useEffect(() => {
@@ -99,6 +105,63 @@ export default function TaskDetails() {
         }
     };
 
+    const handleEdit = () => {
+        if (!task) return;
+        setEditingTask(task);
+        setEditFormData({
+            title: task.title,
+            description: task.description || '',
+            status: task.status || 'todo'
+        });
+    };
+
+    const handleEditCancel = () => {
+        setEditingTask(null);
+        setEditFormData({ title: '', description: '', status: 'todo' });
+    };
+
+    const handleEditSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!editingTask || !editFormData.title.trim()) {
+            addToast('Please enter a task title', 'error');
+            return;
+        }
+
+        try {
+            const payload = {
+                title: editFormData.title.trim(),
+                description: editFormData.description.trim(),
+                status: editFormData.status
+            };
+            const res = await fetch(`${API_URL}/tasks/${editingTask.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!res.ok) throw new Error('Failed to update task');
+            addToast('Task updated', 'success');
+            setEditingTask(null);
+            setEditFormData({ title: '', description: '', status: 'todo' });
+            // Refresh task data
+            const fetchTask = async () => {
+                if (!id) return;
+                try {
+                    const res = await fetch(`${API_URL}/tasks/${id}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        setTask(data);
+                    }
+                } catch (err) {
+                    console.error('Failed to refresh task', err);
+                }
+            };
+            fetchTask();
+        } catch (err) {
+            console.error(err);
+            addToast('Failed to update task', 'error');
+        }
+    };
+
     if (loading) {
         return (
             <div className="animate-fade-in space-y-6 py-6 max-w-4xl mx-auto px-3 sm:px-4 md:px-6">
@@ -161,12 +224,10 @@ export default function TaskDetails() {
                                 {getStatusBadge(task.status)}
                             </div>
                         </div>
-                        <Link to={`/crud#edit-${task.id}`}>
-                            <Button variant="outline" className="gap-2">
-                                <FileText className="h-4 w-4" />
-                                Edit Task
-                            </Button>
-                        </Link>
+                        <Button variant="outline" className="gap-2" onClick={handleEdit}>
+                            <Edit className="h-4 w-4" />
+                            Edit Task
+                        </Button>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -221,7 +282,7 @@ export default function TaskDetails() {
                                 Back to Dashboard
                             </Button>
                         </Link>
-                        <Link to="/crud#add" className="flex-1">
+                        <Link to="/add-task" className="flex-1">
                             <Button className="w-full gap-2">
                                 Add New Task
                             </Button>
@@ -229,9 +290,72 @@ export default function TaskDetails() {
                     </div>
                 </CardContent>
             </Card>
+
+            <Dialog open={Boolean(editingTask)} onOpenChange={(open) => !open && handleEditCancel()}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <Edit className="h-5 w-5" />
+                            Edit Task
+                        </DialogTitle>
+                        <DialogDescription>
+                            Update the task details below
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleEditSubmit} className="space-y-4">
+                        <div className="space-y-2">
+                            <label htmlFor="edit-title" className="text-sm font-medium">Title *</label>
+                            <Input
+                                id="edit-title"
+                                placeholder="Task title"
+                                value={editFormData.title}
+                                onChange={e => setEditFormData({ ...editFormData, title: e.target.value })}
+                                required
+                                className="w-full"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="edit-description" className="text-sm font-medium">Description</label>
+                            <Textarea
+                                id="edit-description"
+                                placeholder="Task description"
+                                rows={4}
+                                value={editFormData.description}
+                                onChange={e => setEditFormData({ ...editFormData, description: e.target.value })}
+                                className="w-full resize-none"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="edit-status" className="text-sm font-medium">Status</label>
+                            <Select
+                                id="edit-status"
+                                value={editFormData.status}
+                                onChange={e => setEditFormData({ ...editFormData, status: e.target.value })}
+                                className="w-full"
+                            >
+                                <option value="todo">To Do</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                            </Select>
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={handleEditCancel}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" className="gap-2">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Update Task
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
+
+
+
 
 
 
